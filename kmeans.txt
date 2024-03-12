@@ -1,0 +1,68 @@
+def kmeans(k, num_of_iters):
+    distances = []
+    centroids = get_random_centroids(k)
+    
+    iterations = 0
+    old_centroids = None 
+
+    while not should_stop(old_centroids, centroids, iterations, num_of_iters):
+        iterations += 1
+        old_centroids = centroids
+        labels = get_labels(centroids)
+        distances.append(calculate_distance_score(labels, centroids))
+        centroids = new_centroids(labels, k)
+        
+    global distance_scores
+    distance_scores = distances
+    return centroids, labels
+
+
+def get_random_centroids(k):
+    return kmeans_df.sample(n=k).values
+
+def should_stop(old_centroids, centroids, iterations, num_of_iters):
+    if num_of_iters == -1:  # Run until convergence
+        if old_centroids is None:
+            return False
+        return np.allclose(old_centroids, centroids)
+    else:  # Run for a fixed number of iterations
+        return iterations > num_of_iters
+
+def get_distance(data_point, centroid_point):
+    return np.sqrt(np.sum((data_point - centroid_point) ** 2))
+
+def get_labels(centroids):
+    labels = []
+    for index, row in kmeans_df.iterrows():
+        distance = [get_distance(row.values, centroid) for centroid in centroids]
+        labels.append(np.argmin(distance))
+    return labels
+
+def new_centroids(labels, k):
+    df = kmeans_df.copy()
+    df['labels'] = labels
+    centroids = np.array([df[df['labels'] == i].mean(axis=0)[:-1] for i in range(k)])
+    return centroids
+
+def calculate_distance_score(labels, centroids):
+    df = kmeans_df.copy()
+    df['labels'] = labels
+    total_distance = 0 
+    for index, row in df.iterrows():
+        centroid_point = centroids[int(row['labels'])]  # Corrected indexing
+        total_distance += get_distance(row[:-1].values, centroid_point)
+    return total_distance
+
+
+# Example usage:
+  # K=3 clusters, 10 iterations
+
+# Plotting the result
+
+def plot_clusters(k,num_of_iters):
+    centroids,labels = kmeans(k,num_of_iters)
+    plt.scatter(kmeans_df['X'], kmeans_df['Y'], c=labels, cmap='coolwarm')
+    plt.scatter(centroids[:, 0], centroids[:, 1], c='red', marker='X', s = 150)
+    plt.title(f"K-means where # of Clusters is={k}")
+    plt.show()
+
